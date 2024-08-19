@@ -46,11 +46,14 @@ class Operation:
         response: Optional[Union[Response, Type[BaseModel]]] = None,
         responses: Optional[List[Response]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
+        examples: Optional[Dict] = None,
     ):
         self.summary = summary
         self.description = description
         self.tags = tags
         self.parameters = parameters
+
+        self.examples = examples
 
         self.content_types = content_types
         self.request = request
@@ -70,9 +73,7 @@ class Operation:
             self.responses = {response.code: {DEFAULT_CONTENT_TYPE: response}}
         else:
             # If not, we will use sensible defaults
-            self.responses = {
-                DEFAULT_CODE: {DEFAULT_CONTENT_TYPE: Response(model=response)}
-            }
+            self.responses = {DEFAULT_CODE: {DEFAULT_CONTENT_TYPE: Response(model=response)}}
 
     def _populate_responses(self, responses: List[Response]):
         self.responses = {}
@@ -80,9 +81,7 @@ class Operation:
             if response.code not in self.responses:
                 self.responses[response.code] = {}
             if response.content_type in self.responses[response.code]:
-                raise TypeError(
-                    f"Multiple responses defined for {response.code} — {response.content_type}"
-                )
+                raise TypeError(f"Multiple responses defined for {response.code} — {response.content_type}")
             self.responses[response.code][response.content_type] = response
 
 
@@ -131,32 +130,25 @@ class Docs:
         if self.request or self.response or self.responses:
             for method in self.methods:
                 if getattr(self, method):
-                    raise TypeError(
-                        "You must choose either a short-hand or long-hand Docs, not both."
-                    )
+                    raise TypeError("You must choose either a short-hand or long-hand Docs, not both.")
 
     @classmethod
-    def _build_operation_from_operation(
-        cls, method: Operation, spec: APISpec, content_types: List[str] = None
-    ):
+    def _build_operation_from_operation(cls, method: Operation, spec: APISpec, content_types: List[str] = None):
         operation = {}
 
         if method.request:
             if method.request.__name__ not in spec.components.schemas:
-                spec.components.schema(
-                    method.request.__name__, model=method.request, spec=spec
-                )
+                spec.components.schema(method.request.__name__, model=method.request, spec=spec)
             content_type = (
                 method.content_types[0]
                 if method.content_types
-                else content_types[0]
-                if content_types
-                else DEFAULT_CONTENT_TYPE
+                else content_types[0] if content_types else DEFAULT_CONTENT_TYPE
             )
             operation["requestBody"] = {
                 "content": {
                     content_type: {
                         "schema": method.request.__name__,
+                        "examples": method.examples if method.examples else {},
                     }
                 }
             }
@@ -177,9 +169,7 @@ class Docs:
                             "description": response.description,
                             "content": {},
                         }
-                    responses[code]["content"][content_type] = {
-                        "schema": response.model.__name__
-                    }
+                    responses[code]["content"][content_type] = {"schema": response.model.__name__}
 
             operation["responses"] = responses
 
@@ -197,17 +187,11 @@ class Docs:
         return operation
 
     @classmethod
-    def _build_operation_from_model(
-        cls, model: Type[BaseModel], spec: APISpec, content_types: List[str] = None
-    ):
-        return cls._build_operation_from_operation(
-            Operation(content_types=content_types, response=model), spec
-        )
+    def _build_operation_from_model(cls, model: Type[BaseModel], spec: APISpec, content_types: List[str] = None):
+        return cls._build_operation_from_operation(Operation(content_types=content_types, response=model), spec)
 
     @classmethod
-    def _build_operation(
-        cls, method: Method, spec: APISpec, content_types: List[str] = None
-    ):
+    def _build_operation(cls, method: Method, spec: APISpec, content_types: List[str] = None):
         if isinstance(method, Operation):
             return cls._build_operation_from_operation(method, spec, content_types)
         else:
@@ -224,27 +208,19 @@ class Docs:
             spec,
         )
 
-    def build_operations(
-        self, spec: APISpec, methods: List[str], content_types: List[str] = None
-    ):
+    def build_operations(self, spec: APISpec, methods: List[str], content_types: List[str] = None):
         operations = {}
 
         if self.request or self.responses or self.response:
             if len(methods) != 1:
-                raise TypeError(
-                    "You can only use Docs short-hand for single-method API routes."
-                )
+                raise TypeError("You can only use Docs short-hand for single-method API routes.")
 
-            operations[methods[0].lower()] = self._build_simple_operation(
-                spec, content_types
-            )
+            operations[methods[0].lower()] = self._build_simple_operation(spec, content_types)
 
         else:
             for method in self.methods:
                 if getattr(self, method):
-                    operations[method] = self._build_operation(
-                        getattr(self, method), spec, content_types
-                    )
+                    operations[method] = self._build_operation(getattr(self, method), spec, content_types)
 
         return operations
 
