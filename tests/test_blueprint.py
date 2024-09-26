@@ -139,7 +139,7 @@ def test_blueprint_three_with_default_docs():
                     "requestBody": {
                         "content": {
                             "multipart/form-data": {
-                                "schema": {"$ref": "#/components/schemas/BaseModel"}
+                                "schema": {"$ref": "#/components/schemas/EmptyModel"}
                             }
                         }
                     },
@@ -148,7 +148,7 @@ def test_blueprint_three_with_default_docs():
                             "description": "Success",
                             "content": {
                                 "application/json": {
-                                    "schema": {"$ref": "#/components/schemas/BaseModel"}
+                                    "schema": {"$ref": "#/components/schemas/EmptyModel"}
                                 }
                             },
                         }
@@ -160,7 +160,7 @@ def test_blueprint_three_with_default_docs():
         "openapi": "3.0.1",
         "components": {
             "schemas": {
-                "BaseModel": {"title": "BaseModel", "type": "object", "properties": {}}
+                "EmptyModel": {"title": "EmptyModel", "type": "object", "properties": {}}
             }
         },
     }
