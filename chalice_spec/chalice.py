@@ -10,6 +10,10 @@ from chalice.app import Chalice
 from pydantic import BaseModel
 
 
+class EmptyModel(BaseModel):
+    pass
+
+
 def default_docs_for_methods(
     methods: List[str], content_types: Optional[List[str]] = None
 ):
@@ -22,11 +26,11 @@ def default_docs_for_methods(
         **{
             method: Operation(
                 content_types=content_types,
-                response=BaseModel,
+                response=EmptyModel,
                 request=(
                     None
                     if method in ["get", "delete", "head", "options"]
-                    else BaseModel
+                    else EmptyModel
                 ),
             )
             for method in methods
