@@ -32,15 +32,16 @@ class PydanticPlugin(BasePlugin):
 
             # If the spec has passed, we probably have nested models to contend with.
             spec: Union[APISpec, None] = kwargs.pop("spec", None)
-            if spec and "definitions" in schema:
-                for k, v in schema["definitions"].items():
-                    try:
-                        spec.components.schema(k, v)
-                    except DuplicateComponentNameError:
-                        pass
+            for key in ("definitions", "$defs"):
+                if spec and key in schema:
+                    for k, v in schema[key].items():
+                        try:
+                            spec.components.schema(k, v)
+                        except DuplicateComponentNameError:
+                            pass
 
-            if "definitions" in schema:
-                del schema["definitions"]
+                if key in schema:
+                    del schema[key]
 
             return schema
 
